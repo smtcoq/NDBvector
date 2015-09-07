@@ -273,65 +273,64 @@ End BV.
 
 
 
-(* Module BVProof. *)
+Module BVProof.
 
-(*   Import BV. *)
+  Import BV.
 
-(*   Definition bitof (bv : t)(m : nat) := *)
-(*     bb_nth m bv. *)
-
-(*   Definition bblt_len (bv : t) := *)
-(*     let (b, n) := bv in *)
-(*     n. *)
+  (** Bit vectors are well-founded when their length match the length of their list *)
+  Definition wf (bv:t) : Prop :=
+     let (b,n) := bv in N.of_nat (length b) = n.
 
 
+  (** All the operations preserve well-foundness *)
+
+  Lemma empty_wf : wf empty.
+  Proof. reflexivity. Qed.
+
+  Lemma concat_wf : forall (bv1 bv2:t), wf bv1 -> wf bv2 -> wf (concat bv1 bv2).
+  Proof.
+    intros [b1 n1] [b2 n2] H1 H2.
+    simpl.
+    rewrite app_length.
+    rewrite Nat2N.inj_add.
+    simpl in H1. simpl in H2.
+    rewrite H1. rewrite H2.
+    reflexivity.
+  Qed.
 
 
-(*   Definition wf (bv:t) : Prop := *)
-(*      let (b,n) := bv in N.of_nat (length b) = n. *)
+  (** Auxiliary lemmas *)
 
-(*   Check N.of_nat. *)
-(*   Print N.of_nat. *)
-(*   SearchAbout N.of_nat. *)
-(*   Search (N.of_nat (_ + _) = (N.of_nat _) + (N.of_nat _)). *)
+  Lemma nth_appendl : forall A (l1 l2:list A) (i:nat) (d:A),
+    (i < length l1)%nat -> nth i (l1 ++ l2) d = nth i l1 d.
+  Proof.
+    intros A. induction l1.
+    - simpl. Search (~ ((_ < 0)%nat)).
+      intros l2 i d H. elim (Lt.lt_n_0 _ H).
+    - simpl. intros l2 [ |i] d Hi.
+      * reflexivity.
+      * apply IHl1. apply Lt.lt_S_n. assumption.
+  Qed.
 
-(*   Lemma concat_wf : forall (bv1 bv2:t), wf bv1 -> wf bv2 -> wf (concat bv1 bv2). *)
-(*   Proof. *)
-(*     intros [b1 n1] [b2 n2] H1 H2. *)
-(*     simpl. *)
-(*     Search ((length (_ ++ _)) = ((length _) + (length _))%nat). *)
-(*     SearchAbout length. *)
-(*     rewrite app_length. *)
-(*     rewrite Nat2N.inj_add. *)
-(*     simpl in H1. simpl in H2. *)
-(*     rewrite H1. rewrite H2. *)
-(*     reflexivity. *)
-(*   Qed. *)
+  Lemma Nat2N_inj_lt i j :
+    (of_nat i < of_nat j) -> (i < j)%nat.
+  Proof.
+    now rewrite Compare_dec.nat_compare_lt, Nat2N.inj_compare.
+  Qed.
 
-(*   Lemma nth_append1 : forall A (l1 l2:list A) (i:nat) (d:A), *)
-(*     (i < length l1)%nat -> nth i (l1 ++ l2) d = nth i l1 d. *)
-(*   Proof. *)
-(*     intros A. induction l1. *)
-(*     - simpl. Search (~ ((_ < 0)%nat)). *)
-(*       intros l2 i d H. elim (Lt.lt_n_0 _ H). *)
-(*     - simpl. intros l2 [ |i] d Hi. *)
-(*       * reflexivity. *)
-(*       * apply IHl1. apply Lt.lt_S_n. assumption. *)
-(*   Qed. *)
 
-(*   Lemma of_nat_lt : forall i j, *)
-(*     (of_nat i < of_nat j) -> (i < j)%nat. *)
-(*   Admitted. *)
+  (** Properties of the operations on well-founded bit vectors *)
 
-(*   Check nth. *)
-(*   Lemma nth_wf : forall(bv1 bv2:t) (i : nat), *)
-(*    let (b1, n1) := bv1 in *)
-(*    wf bv1 -> wf bv2 -> (of_nat i < n1) -> bb_nth i (concat bv1 bv2) = bb_nth i bv1. *)
-(*   Proof. *)
-(*    intros [b1 n1] [b2 n2]. simpl. intros i H1 H2 Hi. *)
-(*    rewrite nth_append1. *)
-(*      - reflexivity. *)
-(*      - rewrite <- H1 in Hi. *)
-(*        apply of_nat_lt. *)
-(*        assumption. *)
-(*   Qed. *)
+  Lemma nth_concat_l : forall(bv1 bv2:t) (i : nat),
+    let (b1, n1) := bv1 in
+    wf bv1 -> wf bv2 -> (of_nat i < n1) -> bb_nth i (concat bv1 bv2) = bb_nth i bv1.
+  Proof.
+    intros [b1 n1] [b2 n2]. simpl. intros i H1 H2 Hi.
+    rewrite nth_appendl.
+    - reflexivity.
+    - rewrite <- H1 in Hi.
+      apply Nat2N_inj_lt.
+      assumption.
+  Qed.
+
+End BVProof.
