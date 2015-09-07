@@ -301,11 +301,11 @@ Module BVProof.
 
   (** Auxiliary lemmas *)
 
-  Lemma nth_appendl : forall A (l1 l2:list A) (i:nat) (d:A),
+  Lemma nth_appendl A : forall (l1 l2:list A) (i:nat) (d:A),
     (i < length l1)%nat -> nth i (l1 ++ l2) d = nth i l1 d.
   Proof.
-    intros A. induction l1.
-    - simpl. Search (~ ((_ < 0)%nat)).
+    induction l1 as [ |a l1 IHl1].
+    - simpl.
       intros l2 i d H. elim (Lt.lt_n_0 _ H).
     - simpl. intros l2 [ |i] d Hi.
       * reflexivity.
